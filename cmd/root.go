@@ -49,7 +49,7 @@ var rootCmd = &cobra.Command{
 	Short:   "1pa is a command line interface to 1password",
 	Long:    "1pa is a command line interface to 1password",
 	Version: "0.1",
-	Args:    cobra.MaximumNArgs(1),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var vaultPath string
 		if len(args) > 0 {
@@ -154,6 +154,7 @@ var rootCmd = &cobra.Command{
 				overviewKeys = append(overviewKeys, k)
 			}
 			fmt.Printf("    overview keys: %s\n", overviewKeys)
+			fmt.Printf("    URLs: %s\n", overview["URLs"])
 
 			data := item.Data()
 			dataKeys := make([]string, 0, len(data))
@@ -161,6 +162,7 @@ var rootCmd = &cobra.Command{
 				dataKeys = append(dataKeys, k)
 			}
 			fmt.Printf("    data keys: %s\n", dataKeys)
+			fmt.Printf("    URLs: %s\n", data["URLs"])
 
 			detail, _ := item.Detail()
 			for j, field := range detail.Fields() {
