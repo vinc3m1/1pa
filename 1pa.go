@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	homedir "github.com/mitchellh/go-homedir"
@@ -11,6 +13,7 @@ import (
 )
 
 func main() {
+	// validate command line arguments
 	args := os.Args[1:]
 	if len(args) < 1 {
 		fmt.Println("Please specify a vault.")
@@ -21,6 +24,8 @@ func main() {
 		printUsage()
 		os.Exit(1)
 	}
+
+	// expand any '~' in the directory and open the vault
 	vaultPath := args[0]
 	if vaultPath != "" {
 		fmt.Printf("Opening vault: %s\n", vaultPath)
@@ -46,6 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// the only profile should be 'default', but show a chooser if there is more than 1 for some reason
 	var profileName string
 	if len(profiles) == 1 {
 		profileName = profiles[0]
@@ -62,25 +68,25 @@ func main() {
 		fmt.Printf("Opening profile: %s\n", profileName)
 	}
 
-	profile, err := vault.Profile("default")
-
+	// open selected profile
+	profile, err := vault.Profile(profileName)
 	if err != nil {
 		fmt.Printf("Error opening profile [%s]: %s\n", profileName, err)
 		os.Exit(1)
 	}
 
+	// prompt for password and unlock vault
 	locked := true
-	validate := func(input string) error {
-		if len(input) < 1 {
-			return errors.New("Password cannot be empty")
-		}
-		return nil
-	}
 	for locked {
 		promptPassword := promptui.Prompt{
-			Label:    fmt.Sprintf("Password (hint: %s)", profile.PasswordHint()),
-			Mask:     '*',
-			Validate: validate,
+			Label: fmt.Sprintf("Password (hint: %s)", profile.PasswordHint()),
+			Mask:  '*',
+			Validate: func(input string) error {
+				if len(input) < 1 {
+					return errors.New("Password cannot be empty")
+				}
+				return nil
+			},
 		}
 		password, err := promptPassword.Run()
 		if err != nil {
@@ -96,8 +102,7 @@ func main() {
 		locked = false
 	}
 
-	fmt.Println("vault unlocked!")
-
+	// get all items in the vault
 	items, err := profile.Items()
 	if err != nil {
 		fmt.Println(err)
@@ -106,6 +111,48 @@ func main() {
 
 	fmt.Printf("found %d items!\n", len(items))
 
+	// sort items
+	// sort.Slice(items, func(i, j int) bool {
+	// 	return items[i].Title() < items[j].Title()
+	// })
+
+	prompt := promptui.Select{
+		Label: "Choose an item",
+		Items: items,
+		Size:  20,
+		Searcher: func(input string, index int) bool {
+			item := items[index]
+
+			var buffer bytes.Buffer
+			buffer.WriteString(item.Title())
+			for _, url := range item.Urls() {
+				buffer.WriteString(url.Url())
+			}
+			input = strings.ToLower(input)
+
+			return strings.Contains(strings.ToLower(buffer.String()), strings.ToLower(input))
+		},
+		Templates: &promptui.SelectTemplates{
+			Label:    "{{ . }}",
+			Active:   "▸ {{ .Title | blue }} {{ printf \"%.80s\" .Url | faint }}",
+			Inactive: "  {{ .Title | blue }} {{ printf \"%.80s\" .Url | faint }}",
+			Selected: "{{ .Title | red }} {{ printf \"%.80s\" .Url | yellow }}",
+			Details: `
+------------ Item ------------
+{{ "Name:" | faint }}    {{ .Title }}
+{{ "Url:" | faint }}     {{ printf "%.100s" .Url }}`,
+		},
+	}
+
+	i, item, err := prompt.Run()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("You chose [%d] %s\n", i, item)
+
+	/**
 	for i, item := range items {
 		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
 
@@ -136,6 +183,7 @@ func main() {
 			}
 		}
 	}
+	*/
 }
 
 func printUsage() {
