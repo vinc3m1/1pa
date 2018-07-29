@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -69,10 +70,17 @@ func main() {
 	}
 
 	locked := true
+	validate := func(input string) error {
+		if len(input) < 1 {
+			return errors.New("Password cannot be empty")
+		}
+		return nil
+	}
 	for locked {
 		promptPassword := promptui.Prompt{
-			Label: fmt.Sprintf("Password (hint: %s)", profile.PasswordHint()),
-			Mask:  '*',
+			Label:    fmt.Sprintf("Password (hint: %s)", profile.PasswordHint()),
+			Mask:     '*',
+			Validate: validate,
 		}
 		password, err := promptPassword.Run()
 		if err != nil {
@@ -96,7 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Found %d items!\n", len(items))
+	fmt.Printf("found %d items!\n", len(items))
 
 	for i, item := range items {
 		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
@@ -132,5 +140,5 @@ func main() {
 
 func printUsage() {
 	fmt.Println(`Usage:
-	1pa [vault]`)
+    1pa [vault]`)
 }
