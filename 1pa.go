@@ -139,6 +139,8 @@ func main() {
 }
 
 func printUsage() {
+	fmt.Println()
 	fmt.Println(`Usage:
     1pa [vault]`)
+	fmt.Println()
 }
