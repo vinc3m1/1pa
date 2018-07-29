@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/manifoldco/promptui"
-	"github.com/miquella/opvault"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/vinc3m1/opvault"
 )
 
 var (
@@ -55,14 +55,14 @@ var rootCmd = &cobra.Command{
 		if len(args) > 0 {
 			vaultPath = args[0]
 			if vaultPath != "" {
-				fmt.Printf("Opening vault: %q\n", vaultPath)
+				fmt.Printf("Opening vault: %s\n", vaultPath)
 			}
 		}
 		if vaultPath == "" && cfgFileUsed != "" {
 			vaultPath = viper.GetString("vault")
 			if vaultPath != "" {
-				fmt.Printf("Using config file: %q\n", cfgFileUsed)
-				fmt.Printf("Opening vault: %q\n", vaultPath)
+				fmt.Printf("Using config file: %s\n", cfgFileUsed)
+				fmt.Printf("Opening vault: %s\n", vaultPath)
 			}
 		}
 		if vaultPath == "" {
@@ -103,20 +103,20 @@ var rootCmd = &cobra.Command{
 				fmt.Println(err)
 				os.Exit(1)
 			}
-			fmt.Printf("Opening profile: %q\n", profileName)
+			fmt.Printf("Opening profile: %s\n", profileName)
 		}
 
 		profile, err := vault.Profile(profileName)
 
 		if err != nil {
-			fmt.Printf("Error opening profile [%q]: %q\n", profileName, err)
+			fmt.Printf("Error opening profile [%s]: %s\n", profileName, err)
 			os.Exit(1)
 		}
 
 		locked := true
 		for locked {
 			promptPassword := promptui.Prompt{
-				Label: fmt.Sprintf("Password (hint: %q)", profile.PasswordHint()),
+				Label: fmt.Sprintf("Password (hint: %s)", profile.PasswordHint()),
 				Mask:  '*',
 			}
 
@@ -129,13 +129,51 @@ var rootCmd = &cobra.Command{
 			err = profile.Unlock(password)
 
 			if err != nil {
-				fmt.Println("Incorrect password")
+				fmt.Println("wrong password, try again")
 				continue
 			}
 			locked = false
 		}
 
 		fmt.Println("vault unlocked!")
+
+		items, err := profile.Items()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Found %d items!\n", len(items))
+
+		for i, item := range items {
+			fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
+
+			overview := item.Overview()
+			overviewKeys := make([]string, 0, len(overview))
+			for k := range overview {
+				overviewKeys = append(overviewKeys, k)
+			}
+			fmt.Printf("    overview keys: %s\n", overviewKeys)
+
+			data := item.Data()
+			dataKeys := make([]string, 0, len(data))
+			for k := range overview {
+				dataKeys = append(dataKeys, k)
+			}
+			fmt.Printf("    data keys: %s\n", dataKeys)
+
+			detail, _ := item.Detail()
+			for j, field := range detail.Fields() {
+				fmt.Printf("    %d: field type: %s name: %s designation: %s\n", j, field.Type(), field.Name(), field.Designation())
+			}
+			for k, section := range detail.Sections() {
+				fmt.Printf("    %d: section name: %q title: %q\n", k, section.Name(), section.Title())
+				for l, sectionField := range section.Fields() {
+					fmt.Printf("        %d: sectionField kind: %s name: %s title: %s\n", l, sectionField.Kind(), sectionField.Name(), sectionField.Title())
+				}
+			}
+		}
+
 	},
 }
 
