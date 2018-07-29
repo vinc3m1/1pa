@@ -154,7 +154,7 @@ var rootCmd = &cobra.Command{
 				overviewKeys = append(overviewKeys, k)
 			}
 			fmt.Printf("    overview keys: %s\n", overviewKeys)
-			fmt.Printf("    URLs: %s\n", overview["URLs"])
+			fmt.Printf("    URLs: %s\n", item.Urls())
 
 			data := item.Data()
 			dataKeys := make([]string, 0, len(data))
