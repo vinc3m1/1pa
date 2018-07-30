@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/manifoldco/promptui"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/vinc3m1/opvault"
@@ -137,57 +138,77 @@ func main() {
 			for _, url := range item.Urls() {
 				buffer.WriteString(url.Url())
 			}
+			detail, _ := item.Detail()
+			for _, field := range detail.Fields() {
+				if field.Type() != opvault.PasswordFieldType {
+					buffer.WriteString(field.Value())
+				}
+			}
+			buffer.WriteString(detail.Notes())
 			input = strings.ToLower(input)
 
 			return strings.Contains(strings.ToLower(buffer.String()), strings.ToLower(input))
 		},
 		Templates: &promptui.SelectTemplates{
 			Label:    "{{ . }}",
-			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
-			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
-			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
-			Details: `
------------- Item ------------
-{{ "Name:" | faint }}    {{ .Title }}
-{{- range $i, $url := .Urls }}
-	{{- if eq $url.Label "" }}
-		{{- "\nwebsite: " | faint}}
-	{{- else }}
-		{{- printf "\n%s: " $url.Label | faint }}
-	{{- end }}
-	{{- $url.Url }}
-{{- end }}
-{{- with .Detail }}
-	{{- range $i, $field := .Fields }}
-		{{- if ne $field.Designation "" }}
-			{{- printf "\n%s:" $field.Designation | faint }} {{ if eq $field.Type "P" }}********{{ else }}{{ $field.Value }}{{ end }}
-		{{- end }}
-	{{- end }}
-	{{- range $i, $section := .Sections }}
-			{{- if and (ne $section.Title "") (gt (len $section.Fields) 0) }}
-				{{- printf "\n[%s]" $section.Title | faint }}
-			{{- end }}
-			{{- range $j, $sectionField := $section.Fields }}
-				{{- if ne $sectionField.Value "" }}
-					{{- printf "\n%s: " $sectionField.Title | faint }}
-					{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value }}{{ end }}
+			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
+			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
+			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
+			Details: `------------ Item ------------
+				{{- "\nName:" | faint }}    {{ .Title }}
+				{{- range $i, $url := .Urls }}
+					{{- if eq $url.Label "" }}
+						{{- "\nwebsite: " | faint}}
+					{{- else }}
+						{{- printf "\n%s: " $url.Label | faint }}
+					{{- end }}
+					{{- printf "%.150s" $url.Url }}
 				{{- end }}
-			{{- end }}
-	{{- end }}
-	{{- if ne .Notes "" }}trashe
-		{{- "\nNotes:" | faint }} {{ .Notes }}
-	{{- end }}
-{{- end }}`,
+				{{- with .Detail }}
+					{{- range $i, $field := .Fields }}
+						{{- if ne $field.Designation "" }}
+							{{- printf "\n%s:" $field.Designation | faint }} {{ if eq $field.Type "P" }}********{{ else }}{{ $field.Value }}{{ end }}
+						{{- end }}
+					{{- end }}
+					{{- range $i, $section := .Sections }}
+							{{- if and (ne $section.Title "") (gt (len $section.Fields) 0) }}
+								{{- printf "\n[%s]" $section.Title | faint }}
+							{{- end }}
+							{{- range $j, $sectionField := $section.Fields }}
+								{{- if ne $sectionField.Value "" }}
+									{{- printf "\n%s: " $sectionField.Title | faint }}
+									{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value }}{{ end }}
+								{{- end }}
+							{{- end }}
+					{{- end }}
+					{{- if ne .Notes "" }}
+						{{- "\nNotes:" | faint }} {{ .Notes }}
+					{{- end }}
+				{{- end }}`,
 		},
 	}
 
-	i, item, err := prompt.Run()
+	i, _, err := prompt.Run()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	item := items[i]
 
-	fmt.Printf("You chose [%d] %s\n", i, item)
+	detail, _ := item.Detail()
+	for _, field := range detail.Fields() {
+		if field.Designation() == opvault.PasswordDesignation {
+			err = clipboard.WriteAll(field.Value())
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println("password copied to clipboard")
+			return
+		}
+	}
+
+	fmt.Printf("You chose %s\n", item)
 }
 
 func printUsage() {
