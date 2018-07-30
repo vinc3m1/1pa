@@ -128,7 +128,7 @@ func main() {
 	prompt := promptui.Select{
 		Label: "Choose an item",
 		Items: items,
-		Size:  20,
+		Size:  10,
 		Searcher: func(input string, index int) bool {
 			item := items[index]
 
