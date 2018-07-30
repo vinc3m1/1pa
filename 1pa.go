@@ -127,7 +127,7 @@ func main() {
 	// printDebug(&items)
 
 	prompt := promptui.Select{
-		Label: "Choose an item",
+		Label: "Choose an item to copy password to clipboard",
 		Items: items,
 		Size:  10,
 		Searcher: func(input string, index int) bool {
@@ -150,7 +150,7 @@ func main() {
 			return strings.Contains(strings.ToLower(buffer.String()), strings.ToLower(input))
 		},
 		Templates: &promptui.SelectTemplates{
-			Label:    "{{ . }}",
+			Label:    "{{ . }}:",
 			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
 			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
 			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
