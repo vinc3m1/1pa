@@ -123,53 +123,7 @@ func main() {
 		return left.Title() < right.Title()
 	})
 
-	// Debug Printing
-	/**
-	for i, item := range items {
-		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
-
-		overview := item.Overview()
-		overviewKeys := make([]string, 0, len(overview))
-		for k := range overview {
-			overviewKeys = append(overviewKeys, k)
-		}
-		fmt.Printf("    overview keys: %s\n", overviewKeys)
-		fmt.Printf("    URLs: %s\n", item.Urls())
-		fmt.Printf("    ps: %s\n", overview["ps"])
-		fmt.Printf("    ainfo: %s\n", overview["ainfo"])
-
-		data := item.Data()
-		dataKeys := make([]string, 0, len(data))
-		for k := range data {
-			dataKeys = append(dataKeys, k)
-		}
-		fmt.Printf("    data keys: %s\n", dataKeys)
-		fmt.Printf("    o: %s\n", data["o"])
-		fmt.Printf("    d: %s\n", data["d"])
-		fmt.Printf("    k: %s\n", data["k"])
-		fmt.Printf("    tx: %s\n", data["tx"])
-		fmt.Printf("    trashed bool: %t\n", item.Trashed())
-
-		detail, _ := item.Detail()
-
-		detailData := detail.Data()
-		detailDataKeys := make([]string, 0, len(detailData))
-		for k := range detailData {
-			detailDataKeys = append(detailDataKeys, k)
-		}
-		fmt.Printf("    detailData keys: %s\n", detailDataKeys)
-
-		for j, field := range detail.Fields() {
-			fmt.Printf("    %d: field type: %s name: %s designation: %s\n", j, field.Type(), field.Name(), field.Designation())
-		}
-		for k, section := range detail.Sections() {
-			fmt.Printf("    %d: section name: %q title: %q\n", k, section.Name(), section.Title())
-			for l, sectionField := range section.Fields() {
-				fmt.Printf("        %d: sectionField kind: %s name: %s title: %s\n", l, sectionField.Kind(), sectionField.Name(), sectionField.Title())
-			}
-		}
-	}
-	*/
+	// printDebug(&items)
 
 	prompt := promptui.Select{
 		Label: "Choose an item",
@@ -220,7 +174,7 @@ func main() {
 				{{- end }}
 			{{- end }}
 	{{- end }}
-	{{- if ne .Notes "" }}
+	{{- if ne .Notes "" }}trashe
 		{{- "\nNotes:" | faint }} {{ .Notes }}
 	{{- end }}
 {{- end }}`,
@@ -241,4 +195,51 @@ func printUsage() {
 	fmt.Println(`Usage:
     1pa [vault]`)
 	fmt.Println()
+}
+
+func printDebug(items *[]*opvault.Item) {
+	for i, item := range *items {
+		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
+
+		overview := item.Overview()
+		overviewKeys := make([]string, 0, len(overview))
+		for k := range overview {
+			overviewKeys = append(overviewKeys, k)
+		}
+		fmt.Printf("    overview keys: %s\n", overviewKeys)
+		fmt.Printf("    URLs: %s\n", item.Urls())
+		fmt.Printf("    ps: %s\n", overview["ps"])
+		fmt.Printf("    ainfo: %s\n", overview["ainfo"])
+
+		data := item.Data()
+		dataKeys := make([]string, 0, len(data))
+		for k := range data {
+			dataKeys = append(dataKeys, k)
+		}
+		fmt.Printf("    data keys: %s\n", dataKeys)
+		fmt.Printf("    o: %s\n", data["o"])
+		fmt.Printf("    d: %s\n", data["d"])
+		fmt.Printf("    k: %s\n", data["k"])
+		fmt.Printf("    tx: %s\n", data["tx"])
+		fmt.Printf("    trashed bool: %t\n", item.Trashed())
+
+		detail, _ := item.Detail()
+
+		detailData := detail.Data()
+		detailDataKeys := make([]string, 0, len(detailData))
+		for k := range detailData {
+			detailDataKeys = append(detailDataKeys, k)
+		}
+		fmt.Printf("    detailData keys: %s\n", detailDataKeys)
+
+		for j, field := range detail.Fields() {
+			fmt.Printf("    %d: field type: %s name: %s designation: %s\n", j, field.Type(), field.Name(), field.Designation())
+		}
+		for k, section := range detail.Sections() {
+			fmt.Printf("    %d: section name: %q title: %q\n", k, section.Name(), section.Title())
+			for l, sectionField := range section.Fields() {
+				fmt.Printf("        %d: sectionField kind: %s name: %s title: %s\n", l, sectionField.Kind(), sectionField.Name(), sectionField.Title())
+			}
+		}
+	}
 }
