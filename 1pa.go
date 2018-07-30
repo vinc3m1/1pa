@@ -167,7 +167,7 @@ func main() {
 				{{- with .Detail }}
 					{{- range $i, $field := .Fields }}
 						{{- if ne $field.Designation "" }}
-							{{- printf "\n%s:" $field.Designation | faint }} {{ if eq $field.Type "P" }}********{{ else }}{{ $field.Value }}{{ end }}
+							{{- printf "\n%s:" $field.Designation | faint }} {{ if or (eq $field.Type "P") (eq $field.Designation "password") }}********{{ else }}{{ $field.Value }}{{ end }}
 						{{- end }}
 					{{- end }}
 					{{- range $i, $section := .Sections }}
