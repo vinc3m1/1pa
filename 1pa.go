@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/manifoldco/promptui"
@@ -109,12 +110,66 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("found %d items!\n", len(items))
+	// sort items by category, then name
+	sort.Slice(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+		if left.Trashed() != right.Trashed() {
+			return right.Trashed()
+		}
+		if left.Category() != right.Category() {
+			return left.Category() < right.Category()
+		}
+		return left.Title() < right.Title()
+	})
 
-	// sort items
-	// sort.Slice(items, func(i, j int) bool {
-	// 	return items[i].Title() < items[j].Title()
-	// })
+	// Debug Printing
+	/**
+	for i, item := range items {
+		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
+
+		overview := item.Overview()
+		overviewKeys := make([]string, 0, len(overview))
+		for k := range overview {
+			overviewKeys = append(overviewKeys, k)
+		}
+		fmt.Printf("    overview keys: %s\n", overviewKeys)
+		fmt.Printf("    URLs: %s\n", item.Urls())
+		fmt.Printf("    ps: %s\n", overview["ps"])
+		fmt.Printf("    ainfo: %s\n", overview["ainfo"])
+
+		data := item.Data()
+		dataKeys := make([]string, 0, len(data))
+		for k := range data {
+			dataKeys = append(dataKeys, k)
+		}
+		fmt.Printf("    data keys: %s\n", dataKeys)
+		fmt.Printf("    o: %s\n", data["o"])
+		fmt.Printf("    d: %s\n", data["d"])
+		fmt.Printf("    k: %s\n", data["k"])
+		fmt.Printf("    tx: %s\n", data["tx"])
+		fmt.Printf("    trashed bool: %t\n", item.Trashed())
+
+		detail, _ := item.Detail()
+
+		detailData := detail.Data()
+		detailDataKeys := make([]string, 0, len(detailData))
+		for k := range detailData {
+			detailDataKeys = append(detailDataKeys, k)
+		}
+		fmt.Printf("    detailData keys: %s\n", detailDataKeys)
+
+		for j, field := range detail.Fields() {
+			fmt.Printf("    %d: field type: %s name: %s designation: %s\n", j, field.Type(), field.Name(), field.Designation())
+		}
+		for k, section := range detail.Sections() {
+			fmt.Printf("    %d: section name: %q title: %q\n", k, section.Name(), section.Title())
+			for l, sectionField := range section.Fields() {
+				fmt.Printf("        %d: sectionField kind: %s name: %s title: %s\n", l, sectionField.Kind(), sectionField.Name(), sectionField.Title())
+			}
+		}
+	}
+	*/
 
 	prompt := promptui.Select{
 		Label: "Choose an item",
@@ -134,13 +189,41 @@ func main() {
 		},
 		Templates: &promptui.SelectTemplates{
 			Label:    "{{ . }}",
-			Active:   "▸ {{ .Title | blue }} {{ printf \"%.80s\" .Url | faint }}",
-			Inactive: "  {{ .Title | blue }} {{ printf \"%.80s\" .Url | faint }}",
-			Selected: "{{ .Title | red }} {{ printf \"%.80s\" .Url | yellow }}",
+			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
+			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
+			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%.80s" .Url | cyan }}`,
 			Details: `
 ------------ Item ------------
 {{ "Name:" | faint }}    {{ .Title }}
-{{ "Url:" | faint }}     {{ printf "%.100s" .Url }}`,
+{{- range $i, $url := .Urls }}
+	{{- if eq $url.Label "" }}
+		{{- "\nwebsite: " | faint}}
+	{{- else }}
+		{{- printf "\n%s: " $url.Label | faint }}
+	{{- end }}
+	{{- $url.Url }}
+{{- end }}
+{{- with .Detail }}
+	{{- range $i, $field := .Fields }}
+		{{- if ne $field.Designation "" }}
+			{{- printf "\n%s:" $field.Designation | faint }} {{ if eq $field.Type "P" }}********{{ else }}{{ $field.Value }}{{ end }}
+		{{- end }}
+	{{- end }}
+	{{- range $i, $section := .Sections }}
+			{{- if and (ne $section.Title "") (gt (len $section.Fields) 0) }}
+				{{- printf "\n[%s]" $section.Title | faint }}
+			{{- end }}
+			{{- range $j, $sectionField := $section.Fields }}
+				{{- if ne $sectionField.Value "" }}
+					{{- printf "\n%s: " $sectionField.Title | faint }}
+					{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value }}{{ end }}
+				{{- end }}
+			{{- end }}
+	{{- end }}
+	{{- if ne .Notes "" }}
+		{{- "\nNotes:" | faint }} {{ .Notes }}
+	{{- end }}
+{{- end }}`,
 		},
 	}
 
@@ -151,39 +234,6 @@ func main() {
 	}
 
 	fmt.Printf("You chose [%d] %s\n", i, item)
-
-	/**
-	for i, item := range items {
-		fmt.Printf("%d: item title: %s category: %s url: %s \n", i, item.Title(), item.Category(), item.Url())
-
-		overview := item.Overview()
-		overviewKeys := make([]string, 0, len(overview))
-		for k := range overview {
-			overviewKeys = append(overviewKeys, k)
-		}
-		fmt.Printf("    overview keys: %s\n", overviewKeys)
-		fmt.Printf("    URLs: %s\n", item.Urls())
-
-		data := item.Data()
-		dataKeys := make([]string, 0, len(data))
-		for k := range overview {
-			dataKeys = append(dataKeys, k)
-		}
-		fmt.Printf("    data keys: %s\n", dataKeys)
-		fmt.Printf("    URLs: %s\n", data["URLs"])
-
-		detail, _ := item.Detail()
-		for j, field := range detail.Fields() {
-			fmt.Printf("    %d: field type: %s name: %s designation: %s\n", j, field.Type(), field.Name(), field.Designation())
-		}
-		for k, section := range detail.Sections() {
-			fmt.Printf("    %d: section name: %q title: %q\n", k, section.Name(), section.Title())
-			for l, sectionField := range section.Fields() {
-				fmt.Printf("        %d: sectionField kind: %s name: %s title: %s\n", l, sectionField.Kind(), sectionField.Name(), sectionField.Title())
-			}
-		}
-	}
-	*/
 }
 
 func printUsage() {
