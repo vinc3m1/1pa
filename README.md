@@ -1,6 +1,8 @@
 # 1pa
 1Password Command Line Interface written in Go
 
+![1pa_demo](https://user-images.githubusercontent.com/498852/43386377-4f2969c6-9398-11e8-820a-d0cc2d46b7b7.gif)
+
 ## Installation
 1. [Install Go](https://golang.org/doc/install)
 2. `go get -u github.com/vinc3m1/1pa`
