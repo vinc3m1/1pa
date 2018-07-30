@@ -207,8 +207,6 @@ func main() {
 			return
 		}
 	}
-
-	fmt.Printf("You chose %s\n", item)
 }
 
 func printUsage() {
