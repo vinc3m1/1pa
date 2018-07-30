@@ -7,4 +7,5 @@
 
 ## Usage
 1. run `1pa [~/Dropbox/path/to/1Password.opvault]`
-2. select an item to copy the password to clipboard
+2. type `/` to search, or use arrow keys to choose an item.
+3. select an item to copy the password to clipboard
