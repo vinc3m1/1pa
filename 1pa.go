@@ -151,11 +151,11 @@ func main() {
 		},
 		Templates: &promptui.SelectTemplates{
 			Label:    "{{ . }}:",
-			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
-			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
-			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%s" .Info | faint }}`,
+			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
+			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
+			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
 			Details: `------------ Item ------------
-				{{- "\nName:" | faint }}    {{ .Title }}
+				{{- "\nName:" | faint }} {{ .Title }}
 				{{- range $i, $url := .Urls }}
 					{{- if eq $url.Label "" }}
 						{{- "\nwebsite: " | faint}}
