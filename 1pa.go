@@ -126,6 +126,11 @@ func main() {
 
 	// printDebug(&items)
 
+	var funcMap = promptui.FuncMap
+
+	funcMap["trimNewlines"] = newlinesToSpaces
+	funcMap["normalize"] = normalizeNewlines
+
 	prompt := promptui.Select{
 		Label: "Choose an item to copy password to clipboard",
 		Items: items,
@@ -151,9 +156,9 @@ func main() {
 		},
 		Templates: &promptui.SelectTemplates{
 			Label:    "{{ . }}:",
-			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
-			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
-			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ printf "%q" .Info | faint }}`,
+			Active:   `▸ {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ .Info | trimNewlines | faint }}`,
+			Inactive: `  {{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ .Info | trimNewlines | faint }}`,
+			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ .Info | trimNewlines | faint }}`,
 			Details: `------------ Item ------------
 				{{- "\nName:" | faint }} {{ .Title }}
 				{{- range $i, $url := .Urls }}
@@ -167,7 +172,7 @@ func main() {
 				{{- with .Detail }}
 					{{- range $i, $field := .Fields }}
 						{{- if ne $field.Designation "" }}
-							{{- printf "\n%s:" $field.Designation | faint }} {{ if or (eq $field.Type "P") (eq $field.Designation "password") }}********{{ else }}{{ $field.Value }}{{ end }}
+							{{- printf "\n%s:" $field.Designation | faint }} {{ if or (eq $field.Type "P") (eq $field.Designation "password") }}********{{ else }}{{ $field.Value | normalize }}{{ end }}
 						{{- end }}
 					{{- end }}
 					{{- range $i, $section := .Sections }}
@@ -177,14 +182,15 @@ func main() {
 							{{- range $j, $sectionField := $section.Fields }}
 								{{- if ne $sectionField.Value "" }}
 									{{- printf "\n%s: " $sectionField.Title | faint }}
-									{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value }}{{ end }}
+									{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value | normalize }}{{ end }}
 								{{- end }}
 							{{- end }}
 					{{- end }}
 					{{- if ne .Notes "" }}
-						{{- "\nNotes:" | faint }} {{ .Notes }}
+						{{- "\nNotes:" | faint }} {{ .Notes | normalize }}
 					{{- end }}
 				{{- end }}`,
+			FuncMap: funcMap,
 		},
 	}
 
@@ -261,4 +267,24 @@ func printDebug(items *[]*opvault.Item) {
 			}
 		}
 	}
+}
+
+func newlinesToSpaces(s string) string {
+	d := []byte(s)
+	// replace CR LF \r\n (windows) space
+	d = bytes.Replace(d, []byte{13, 10}, []byte{32}, -1)
+	// replace CF \r (mac) with space
+	d = bytes.Replace(d, []byte{13}, []byte{32}, -1)
+	// replace LF \n (unix) with space
+	d = bytes.Replace(d, []byte{10}, []byte{32}, -1)
+	return string(d[:])
+}
+
+func normalizeNewlines(s string) string {
+	d := []byte(s)
+	// replace CR LF \r\n (windows) with LF \n (unix)
+	d = bytes.Replace(d, []byte{13, 10}, []byte{10}, -1)
+	// replace CF \r (mac) with LF \n (unix)
+	d = bytes.Replace(d, []byte{13}, []byte{10}, -1)
+	return string(d[:])
 }
