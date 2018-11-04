@@ -160,7 +160,7 @@ func main() {
 			}
 			detail, _ := item.Detail()
 			for _, field := range detail.Fields() {
-				if field.Type() != opvault.PasswordFieldType {
+				if *showPassPtr || field.Type() != opvault.PasswordFieldType {
 					buffer.WriteString(field.Value())
 				}
 			}
