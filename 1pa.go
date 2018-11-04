@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -14,9 +15,18 @@ import (
 	"github.com/vinc3m1/opvault"
 )
 
+type itemWrapper struct {
+	*opvault.Item
+	ShowPass bool
+}
+
 func main() {
+	// flags
+	showPassPtr := flag.Bool("s", false, "Show password fields.")
+	flag.Parse()
+
 	// validate command line arguments
-	args := os.Args[1:]
+	args := flag.Args()
 	if len(args) < 1 {
 		fmt.Println("Please specify a vault.")
 		printUsage()
@@ -124,6 +134,11 @@ func main() {
 		return left.Title() < right.Title()
 	})
 
+	itemWrappers := make([]*itemWrapper, len(items))
+	for idx, item := range items {
+		itemWrappers[idx] = &itemWrapper{item, *showPassPtr}
+	}
+
 	// printDebug(&items)
 
 	var funcMap = promptui.FuncMap
@@ -133,10 +148,10 @@ func main() {
 
 	prompt := promptui.Select{
 		Label: "Choose an item to copy password to clipboard",
-		Items: items,
+		Items: itemWrappers,
 		Size:  10,
 		Searcher: func(input string, index int) bool {
-			item := items[index]
+			item := itemWrappers[index]
 
 			var buffer bytes.Buffer
 			buffer.WriteString(item.Title())
@@ -161,33 +176,33 @@ func main() {
 			Selected: `{{ if .Trashed }}{{ "[Deleted] " | red }}{{ end }}{{ printf "[%s]" .Category.String | blue }} {{ .Title }} {{ .Info | trimNewlines | faint }}`,
 			Details: `------------ Item ------------
 				{{- "\nName:" | faint }} {{ .Title }}
-				{{- range $i, $url := .Urls }}
-					{{- if eq $url.Label "" }}
+				{{- range .Urls }}
+					{{- if eq .Label "" }}
 						{{- "\nwebsite: " | faint}}
 					{{- else }}
-						{{- printf "\n%s: " $url.Label | faint }}
+						{{- printf "\n%s: " .Label | faint }}
 					{{- end }}
-					{{- printf "%.150s" $url.Url }}
+					{{- printf "%.150s" .Url }}
 				{{- end }}
 				{{- with .Detail }}
-					{{- range $i, $field := .Fields }}
-						{{- if ne $field.Designation "" }}
-							{{- printf "\n%s:" $field.Designation | faint }} {{ if or (eq $field.Type "P") (eq $field.Designation "password") }}********{{ else }}{{ $field.Value | normalize }}{{ end }}
+					{{- range .Fields }}
+						{{- if ne .Designation "" }}
+							{{- printf "\n%s:" .Designation | faint }} {{ if and (not $.ShowPass) (or (eq .Type "P") (eq .Designation "password")) }}********{{ else }}{{ .Value | normalize }}{{ end }}
 						{{- end }}
 					{{- end }}
-					{{- range $i, $section := .Sections }}
-							{{- if and (ne $section.Title "") (gt (len $section.Fields) 0) }}
-								{{- printf "\n[%s]" $section.Title | faint }}
+					{{- range .Sections }}
+							{{- if and (ne .Title "") (gt (len .Fields) 0) }}
+								{{- printf "\n[%s]" .Title | faint }}
 							{{- end }}
-							{{- range $j, $sectionField := $section.Fields }}
-								{{- if ne $sectionField.Value "" }}
-									{{- printf "\n%s: " $sectionField.Title | faint }}
-									{{- if eq $sectionField.Kind "concealed" }}********{{- else }}{{ $sectionField.Value | normalize }}{{ end }}
+							{{- range .Fields }}
+								{{- if ne .Value "" }}
+									{{- printf "\n%s: " .Title | faint }}
+									{{- if and (not $.ShowPass) (eq .Kind "concealed") }}********{{- else }}{{ .Value | normalize }}{{ end }}
 								{{- end }}
 							{{- end }}
 					{{- end }}
 					{{- if ne .Notes "" }}
-						{{- "\nNotes:" | faint }} {{ .Notes | normalize }}
+						{{- "\nNotes:" | faint }} {{ .Notes | normalize}}
 					{{- end }}
 				{{- end }}`,
 			FuncMap: funcMap,
@@ -218,7 +233,7 @@ func main() {
 func printUsage() {
 	fmt.Println()
 	fmt.Println(`Usage:
-    1pa [vault]`)
+    1pa [-s] <vault>`)
 	fmt.Println()
 }
 
