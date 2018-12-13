@@ -11,3 +11,5 @@
 1. run `1pa [~/Dropbox/path/to/1Password.opvault]`
 2. type `/` to search through *all fields* except passwords, and use arrow keys to choose an item.
 3. select an item to copy the password to clipboard
+
+To show (unmask) and allow searching of passwords, use the `-s` flag: `1pa -s [path/to/opvault]`
