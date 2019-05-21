@@ -4,7 +4,7 @@
 ![1pa_demo4](https://user-images.githubusercontent.com/498852/43388441-fd6d1e92-939d-11e8-87b4-c05de73a66b7.gif)
 
 ## Installation
-1. [Install Go](https://golang.org/doc/install)
+1. [Install Go](https://golang.org/doc/install) (Go 1.8+ required)
 2. `go get -u github.com/vinc3m1/1pa`
 
 ## Usage
